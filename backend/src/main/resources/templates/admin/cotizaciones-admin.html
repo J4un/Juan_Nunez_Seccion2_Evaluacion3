@@ -1,0 +1,47 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Cotizaciones')}"></head>
+<body>
+
+<div class="nav">
+    <a href="/admin">Volver</a>
+</div>
+
+<div class="container">
+    <h2>Cotizaciones</h2>
+
+    <table class="table" id="tablaCot">
+        <thead>
+        <tr><th>ID</th><th>Total</th><th>Estado</th><th></th></tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<script>
+    fetch('/api/cotizaciones')
+        .then(r => r.json())
+        .then(list => {
+            const tbody = tablaCot.querySelector('tbody');
+            list.forEach(c => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${c.id}</td>
+                    <td>$${c.total}</td>
+                    <td>${c.confirmada ? 'Confirmada' : 'No confirmada'}</td>
+                    <td>
+                         ${!c.confirmada ? `<button class="btn" onclick="confirmar(${c.id})">Confirmar</button>` : ''}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        });
+
+    function confirmar(id) {
+        fetch('/api/cotizaciones/' + id + '/confirmar', {method: 'PUT'})
+            .then(() => location.reload());
+    }
+</script>
+
+</body>
+</html>

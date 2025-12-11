@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Bienvenido')}"></head>
+<body>
+
+<div class="hero">
+    <h1>Sistema muebleria</h1>
+
+    <p>Elija una forma de acceder al sistema</p>
+
+    <div class="actions">
+        <a th:href="@{/admin}" class="btn">Administrador</a>
+        <a th:href="@{/cliente}" class="btn">Cliente</a>
+    </div>
+
+</div>
+
+</body>
+</html>

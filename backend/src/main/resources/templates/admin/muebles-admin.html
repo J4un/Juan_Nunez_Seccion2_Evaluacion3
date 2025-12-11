@@ -1,0 +1,48 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Muebles Admin')}"></head>
+<body>
+
+<div class="nav">
+    <a href="/admin">Volver</a>
+</div>
+
+<div class="container">
+    <h2>Gestion de muebles</h2>
+
+    <a href="/admin/muebles/nuevo" class="btn">Crear mueble</a>
+
+    <table class="table" id="tablaMuebles">
+        <thead>
+        <tr>
+            <th>ID</th> <th>Nombre</th> <th>Stock</th> <th>Precio</th> <th>Accion</th>
+        </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<script>
+    fetch('/api/muebles')
+        .then(r => r.json())
+        .then(lista => {
+            const tbody = document.querySelector('#tablaMuebles tbody');
+            lista.forEach(m => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${m.id}</td>
+                    <td>${m.nombre}</td>
+                    <td>${m.stock}</td>
+                    <td>$${m.precioBase}</td>
+                    <td>
+                        <a class="btn" href="/admin/muebles/${m.id}/editar">Editar</a>
+                        <a class="btn" href="/admin/muebles/${m.id}/variantes">Variantes</a>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        });
+</script>
+
+</body>
+</html>

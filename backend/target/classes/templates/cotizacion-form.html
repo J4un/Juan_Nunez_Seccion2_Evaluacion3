@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Nueva Cotización')}"></head>
+<body>
+
+<div class="container">
+    <h2>Nueva cotización</h2>
+
+    <div id="itemsContainer">
+    </div>
+
+    <div class="form-actions">
+        <button id="addItemBtn" class="btn secondary" type="button">
+            ➕ Agregar ítem
+        </button>
+        <button id="createQuoteBtn" class="btn" type="button">
+            💾 Crear cotización
+        </button>
+        <a th:href="@{/cotizaciones}" class="btn secondary">
+            ↩ Volver al Listado
+        </a>
+    </div>
+</div>
+
+
+<script>
+    let mueblesGlobal = [];
+
+    async function fetchMuebles() {
+        const res = await fetch('/api/muebles');
+        const data = await res.json();
+        mueblesGlobal = data;
+    }
+
+    function createRow() {
+        const div = document.createElement('div');
+        div.className = 'quote-row';
+
+        div.innerHTML = `
+            <select class="sel-mueble"></select>
+            <select class="sel-variante"></select>
+            <input class="qty" type="number" value="1" min="1">
+            <button class="btn danger removeBtn" type="button">X Quitar</button>
+        `;
+
+        return div;
+    }
+
+    function fillMuebleSelect(select) {
+        select.innerHTML = '<option value="" selected disabled>-- Seleccione un mueble --</option>';
+        mueblesGlobal.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m.id;
+            opt.textContent = `${m.nombre} ($${m.precioBase})`;
+            select.appendChild(opt);
+        });
+    }
+
+    function addRow() {
+        const container = document.getElementById('itemsContainer');
+        const row = createRow();
+        const selMueble = row.querySelector('.sel-mueble');
+        const selVariante = row.querySelector('.sel-variante');
+
+        fillMuebleSelect(selMueble);
+        selVariante.innerHTML = '<option value="">-- variante (opcional) --</option>';
+
+        selMueble.addEventListener('change', async function () {
+            const id = this.value;
+            selVariante.innerHTML = '<option value="">-- variante (opcional) --</option>';
+
+            if (!id) return;
+
+            const r = await fetch(`/api/variantes/mueble/${id}`);
+            const vars = await r.json();
+
+            vars.forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v.id;
+                opt.textContent = `${v.nombre} (+$${v.precioExtra})`;
+                selVariante.appendChild(opt);
+            });
+        });
+
+        row.querySelector('.removeBtn').addEventListener('click', () => row.remove());
+        container.appendChild(row);
+    }
+
+    function collectAndSendQuote() {
+        const rows = document.querySelectorAll('.quote-row');
+        const detalles = Array.from(rows).map(r => {
+            const mId = r.querySelector('.sel-mueble').value;
+            if (!mId) return null;
+
+            const vId = r.querySelector('.sel-variante').value;
+            const qty = parseInt(r.querySelector('.qty').value) || 1;
+
+            return {
+                cantidad: qty,
+                subtotal: 0,
+                mueble: { id: parseInt(mId) },
+                variante: vId ? { id: parseInt(vId) } : null
+            };
+        }).filter(x => x !== null);
+
+        if (detalles.length === 0) {
+            alert("Debe agregar al menos un ítem.");
+            return;
+        }
+
+        fetch('/api/cotizaciones', {
+            method: 'POST',
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(detalles)
+        })
+        .then(r => {
+            if (!r.ok) throw new Error("Error al crear cotización. Revise el stock.");
+            return

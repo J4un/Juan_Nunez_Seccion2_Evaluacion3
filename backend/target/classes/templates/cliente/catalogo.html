@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Catálogo')}"></head>
+<body>
+
+<div class="nav">
+    <a th:href="@{/cotizar}">Cotizar</a>
+    <a th:href="@{/cliente}" class="btn secondary" >Volver</a>
+</div>
+
+<div class="container">
+    <h2>Catálogo de Muebles</h2>
+
+    <div id="catalogo" class="catalog-grid">
+    </div>
+</div>
+
+<script>
+    async function fetchVariantes(muebleId) {
+        try {
+            const r = await fetch(`/api/variantes/mueble/${muebleId}`);
+            if (!r.ok) return [];
+            return await r.json();
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function createMuebleCard(m, variantes) {
+        const variantsHtml = variantes.length > 0
+            ? `
+                <details class="variants-toggle">
+                    <summary>Ver ${variantes.length} variantes</summary>
+                    <table class="table small-table">
+                        <tbody>
+                            ${variantes.map(v => `
+                                <tr>
+                                    <td>${v.nombre}</td>
+                                    <td class="price-extra">+$${v.precioExtra}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </details>
+              `
+            : `<p class="no-variants">no se aplican variantes</p>`;
+
+        return `
+            <div class="card">
+                <h3>${m.nombre}</h3>
+                <div class="details">
+                    <p><strong>Precio base:</strong> <span class="price-base">$${m.precioBase}</span></p>
+                    <p><strong>Stock:</strong> ${m.stock}</p>
+                </div>
+                ${variantsHtml}
+            </div>
+        `;
+    }
+
+    async function loadCatalog() {
+        const cont = document.getElementById('catalogo');
+        try {
+            const res = await fetch('/api/muebles');
+            const muebles = await res.json();
+            const activos = muebles.filter(m => m.estado === 'activo');
+
+            const cardPromises = activos.map(async m => {
+                const variantes = await fetchVariantes(m.id);
+                return createMuebleCard(m, variantes);
+            });
+
+            const cards = await Promise.all(cardPromises);
+            cont.innerHTML = cards.join('');
+
+        } catch (error) {
+            cont.innerHTML = '<p class="error-msg">SIGUESINFUNCIONARELCATALOGOAAAAAAAAAAAAAAAAA</p>';
+        }
+    }
+
+    loadCatalog();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Cotizar')}"></head>
+<body>
+
+
+
+<h2>Realizar Cotización</h2>
+
+<div class="container">
+
+    <!---->
+    <!---->
+    <!---->
+
+
+    <label for="muebleSelect">Seleccione un mueble</label>
+    <select id="muebleSelect">
+        <option value="">-- Seleccione --</option>
+    </select>
+
+    <label for="varianteSelect">Seleccione una variante</label>
+    <select id="varianteSelect">
+        <option value="">-- Seleccione un mueble primero --</option>
+    </select>
+
+    <label for="cantidadInput">Cantidad</label>
+    <!-------- <input id="cantidadInput" type="number" min="0" value="0"/> ----->
+    <input id="cantidadInput" type="number" min="1" value="1"/>
+
+    <button class="btn" id="agregarBtn">Agregar a cotización</button>
+
+    <hr>
+
+    <!-----------tabla de la cotizacion----->
+    <h3>Detalle de cotización</h3>
+    <table class="table">
+        <thead>
+        <tr>
+            <th>Mueble</th>
+            <th>Variante</th>
+            <th>Cantidad</th>
+            <th>Subtotal</th>
+        </tr>
+        </thead>
+        <tbody id="detallesTable"></tbody>
+    </table>
+
+    <h3>Total: $<span id="totalSpan">0</span></h3>
+
+    <button class="btn" id="confirmarBtn">Confirmar</button>
+    <a href="/cliente" class="btn secondary">Volver</a>
+
+</div>
+
+<script>
+    //////////
+    /////trae mal el muebkee
+
+    //cargar el mueble
+    fetch('/api/muebles')
+        .then(r => r.json())
+        .then(muebles => {
+            const sel = document.getElementById('muebleSelect');
+            muebles
+                .filter(m => m.estado === "activo")
+                .forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m.id;
+                    opt.textContent = m.nombre + " ($" + m.precioBase + ")";
+                    sel.appendChild(opt);
+                });
+        });
+
+                                                //cargar las variantes segun el mueble recier cargado
+    document.getElementById('muebleSelect').addEventListener('change', () => {
+        const muebleId = document.getElementById('muebleSelect').value;
+        const varSel = document.getElementById('varianteSelect');
+
+        varSel.innerHTML = `<option value="">-- Sin variante --</option>`;
+
+        if (!muebleId) return;
+
+        fetch('/api/variantes/mueble/' + muebleId)
+            .then(r => r.json())
+            .then(vars => {
+                vars.forEach(v => {
+                    const opt = document.createElement('option');
+                    opt.value = v.id;
+                    opt.textContent = `${v.nombre} (+$${v.precioExtra})`;
+                    varSel.appendChild(opt);
+                });
+            });
+    });
+
+//agregar a las cotizaciones
+    let detalles = [];
+    document.getElementById('agregarBtn').addEventListener('click', () => {
+        const muebleId = document.getElementById('muebleSelect').value;
+        const varianteId = document.getElementById('varianteSelect').value;
+        const cantidad = parseInt(document.getElementById('cantidadInput').value);
+
+        if (!muebleId || cantidad < 1) {
+            alert("Seleccione un mueble y una cantidad válida.");
+            return;
+        }
+
+        detalles.push({
+            mueble: { id: muebleId },
+            variante: varianteId ? { id: varianteId } : null,
+            cantidad: cantidad
+        });
+
+        renderTabla();
+    });
+
+
+    function renderTabla() {
+        const tbody = document.getElementById('detallesTable');
+        tbody.innerHTML = "";
+
+        let total = 0;
+
+        detalles.forEach(async (d, index) => {
+            const m = await fetch("/api/muebles/" + d.mueble.id).then(r=>r.json()).catch(()=>null);
+            const v = d.variante ? await fetch("/api/variantes/" + d.variante.id).then(r=>r.json()).catch(()=>null) : null;
+
+            const subtotal = 1; // solo placeholder, backend calculará
+
+            total += subtotal;
+
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${m ? m.nombre : ""}</td>
+                <td>${v ? v.nombre : "Sin variante"}</td>
+                <td>${d.cantidad}</td>
+                <td>Calculado al confirmar</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        document.getElementById("totalSpan").innerText = total;
+    }
+
+    document.getElementById('confirmarBtn').addEventListener('click', () => {
+
+        if (detalles.length === 0) {
+            alert("Se debe agregar un producto minimo");
+            return;
+        }
+
+        fetch('/api/cotizaciones', {
+            method: 'POST',
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(detalles)
+        })
+            .then(r => r.json())
+            .then(cot => {
+                alert("Cotizacion :" + cot.id + " creada");
+                detalles = [];
+                renderTabla();
+            });
+    });
+</script>
+</body>
+</html>

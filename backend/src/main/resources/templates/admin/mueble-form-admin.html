@@ -1,0 +1,77 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Editar Mueble')}"></head>
+<body>
+
+<div class="nav">
+    <a href="/admin/muebles">Volver</a>
+</div>
+
+<div class="container">
+    <h2 th:text="${muebleId} ? 'Editar Mueble' : 'Crear Mueble'"></h2>
+
+    <form id="formMueble">
+
+        <label>Nombre</label>
+        <input type="text" id="nombre">
+        <label>Tipo</label>
+        <input type="text" id="tipo">
+        <label>Precio base</label>
+        <input type="number" id="precioBase">
+        <label>Stock</label>
+        <input type="number" id="stock">
+
+        <label>Material</label>
+        <input type="text" id="material">
+
+        <label>Tamaño</label>
+        <input type="text" id="tamano">
+
+        <div class="form-actions">
+            <button class="btn">Guardar</button>
+        </div>
+    </form>
+</div>
+
+<script th:inline="javascript">
+    const MUEBLE_ID = [[${muebleId}]];
+</script>
+
+<script>
+
+
+    if (MUEBLE_ID) {
+        fetch('/api/muebles/' + MUEBLE_ID).then(r => r.json()) .then(m => {
+                nombre.value = m.nombre;
+                tipo.value = m.tipo;
+                precioBase.value = m.precioBase;
+                stock.value = m.stock;
+                material.value = m.material;
+                tamano.value = m.tamano;
+            });
+    }
+
+
+
+    formMueble.addEventListener('submit', e => {
+        e.preventDefault();
+
+        const body = {
+            nombre: nombre.value,
+            tipo: tipo.value,
+            precioBase: precioBase.value,
+            stock: stock.value,
+            material: material.value,
+            tamano: tamano.value
+        };
+
+        fetch(MUEBLE_ID ? '/api/muebles/' + MUEBLE_ID : '/api/muebles', {
+            method: MUEBLE_ID ? 'PUT' : 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(body)
+        }).then(() => location.href = '/admin/muebles');
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,61 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Variantes')}"></head>
+<body>
+
+<div class="nav">
+    <a href="/admin/muebles">Volver</a>
+</div>
+
+<div class="container">
+    <h2>Variantes del mueble</h2>
+
+    <label>Nombre</label>
+    <input id="nombreVar">
+
+    <label>Precio extra</label>
+    <input id="precioExtra" type="number">
+
+    <button id="btnCrear" class="btn">Crear</button>
+
+    <table class="table" id="tablaVar">
+        <thead><tr><th>ID</th><th>Nombre</th><th>Extra</th></tr></thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<script th:inline="javascript">
+    const MUEBLE_ID = [[${muebleId}]];
+</script>
+
+<script>
+    function cargar() {
+        fetch('/api/variantes/mueble/' + MUEBLE_ID)
+            .then(r => r.json())
+            .then(list => {
+                const tbody = tablaVar.querySelector('tbody');
+                tbody.innerHTML = "";
+                list.forEach(v => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td>${v.id}</td><td>${v.nombre}</td><td>$${v.precioExtra}</td>`;
+                    tbody.appendChild(tr);
+                });
+            });
+    }
+
+    btnCrear.onclick = () => {
+        fetch('/api/variantes/' + MUEBLE_ID, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                nombre: nombreVar.value,
+                precioExtra: precioExtra.value
+            })
+        }).then(() => cargar());
+    };
+
+    cargar();
+</script>
+
+</body>
+</html>
