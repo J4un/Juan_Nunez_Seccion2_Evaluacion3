@@ -44,7 +44,7 @@
     }
 
     btnCrear.onclick = () => {
-        fetch('/api/variantes/' + MUEBLE_ID, {
+        fetch('/api/variantes/mueble/' + MUEBLE_ID, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
@@ -59,3 +59,4 @@
 
 </body>
 </html>
+
